@@ -142,7 +142,7 @@ public:
         EstacaoMonitoramento* estacao = dynamic_cast<EstacaoMonitoramento*>(subject);
         if (!estacao) return;
 
-        std::cout << nome << " recebeu atualizacao da estacao " << estacao->getNomeEstacao() << " (ID " << estacao->getId() << ")\n";
+        std::cout << nome << " recebeu atualização da estação " << estacao->getNomeEstacao() << " (ID " << estacao->getId() << ")\n";
         std::cout << "Localização: " << estacao->getLocalizacao() << "\n";
         std::cout << "Ambiente: " << estacao->getTipoAmbienteMonitorado() << "\n";
         std::cout << "Temperatura: " << estacao->getTemperatura() << " C\n";
@@ -216,12 +216,35 @@ public:
     }
 };
 
-int main() {
-    CentralMonitoramento& central = CentralMonitoramento::getInstance();
+class SistemaMonitoramentoFacade { // fachada
+public:
+    void cadastrarEstacao(int id, const std::string& nome, const std::string& localizacao, const std::string& tipo) {
+        CentralMonitoramento::getInstance().addEstacao(EstacaoMonitoramentoFactory::criarEstacao(id, nome, localizacao, tipo));
+    }
 
-    central.addEstacao(EstacaoMonitoramentoFactory::criarEstacao(1, "Estacao 1", "Porto Triste - RS", "Rio"));
-    central.addEstacao(EstacaoMonitoramentoFactory::criarEstacao(2, "Estacao 2", "São José dos Morros - SP", "Lago"));
-    central.addEstacao(EstacaoMonitoramentoFactory::criarEstacao(3, "Estacao 3", "Pelotinhas - RS", "Rio"));
+    void adicionarObserverNaEstacao(int id, Observer* observer) {
+        EstacaoMonitoramento* estacao = CentralMonitoramento::getInstance().buscarEstacaoId(id);
+
+        if (estacao != nullptr) {
+            estacao->addObserver(observer);
+        }
+    }
+
+    void atualizarLeiturasEstacao(int id, double temperatura, double umidade, double pressao, double ph) {
+        EstacaoMonitoramento* estacao = CentralMonitoramento::getInstance().buscarEstacaoId(id);
+
+        if (estacao != nullptr) {
+            estacao->atualizarLeituras(temperatura, umidade, pressao, ph);
+        }
+    }
+};
+
+int main() {
+    SistemaMonitoramentoFacade sistema;
+
+    sistema.cadastrarEstacao(1, "Estacao 1", "Porto Triste - RS", "Rio");
+    sistema.cadastrarEstacao(2, "Estacao 2", "São José dos Morros - SP", "Lago");
+    sistema.cadastrarEstacao(3, "Estacao 3", "Pelotinhas - RS", "Rio");
 
     InstituicaoObserver unifesp;
     unifesp.setNome("UNIFESP");
@@ -231,29 +254,19 @@ int main() {
 
     AlertaObserver alerta;
 
-    EstacaoMonitoramento* estacao1 = central.buscarEstacaoId(1);
-    EstacaoMonitoramento* estacao2 = central.buscarEstacaoId(2);
-    EstacaoMonitoramento* estacao3 = central.buscarEstacaoId(3);
+    sistema.adicionarObserverNaEstacao(1, &unifesp);
+    sistema.adicionarObserverNaEstacao(1, &pucrs);
+    sistema.adicionarObserverNaEstacao(1, &alerta);
 
-    if (estacao1 != nullptr) {
-        estacao1->addObserver(&unifesp);
-        estacao1->addObserver(&pucrs);
-        estacao1->addObserver(&alerta);
-    }
+    sistema.adicionarObserverNaEstacao(2, &unifesp);
+    sistema.adicionarObserverNaEstacao(2, &alerta);
 
-    if (estacao2 != nullptr) {
-        estacao2->addObserver(&unifesp);
-        estacao2->addObserver(&alerta);
-    }
-    
-    if (estacao3 != nullptr) {
-        estacao3->addObserver(&pucrs);
-        estacao3->addObserver(&alerta);
-    }
-    
-    if (estacao1) estacao1->atualizarLeituras(25.0, 68.0, 1013.0, 7.1);
-    if (estacao2) estacao2->atualizarLeituras(36.5, 92.0, 1008.0, 5.8);
-    if (estacao3) estacao3->atualizarLeituras(22.0, 81.0, 1011.0, 7.4);
+    sistema.adicionarObserverNaEstacao(3, &pucrs);
+    sistema.adicionarObserverNaEstacao(3, &alerta);
+
+    sistema.atualizarLeiturasEstacao(1, 25.0, 68.0, 1013.0, 7.1);
+    sistema.atualizarLeiturasEstacao(2, 36.5, 92.0, 1008.0, 5.8);
+    sistema.atualizarLeiturasEstacao(3, 22.0, 81.0, 1011.0, 7.4);
 
     return 0;
 }
