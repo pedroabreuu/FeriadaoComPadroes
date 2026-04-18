@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 class Subject;
 
@@ -109,6 +110,19 @@ public:
     }
 };
 
+class EstacaoMonitoramentoFactory {
+public:
+    static std::unique_ptr<EstacaoMonitoramento> criarEstacao(const int id, const std::string& nome, const std::string& localizacao, 
+                                                                                                            const std::string& tipo) {
+        auto estacao = std::make_unique<EstacaoMonitoramento>();
+        estacao->setId(id);
+        estacao->setNomeEstacao(nome);
+        estacao->setLocalizacao(localizacao);
+        estacao->setTipoAmbienteMonitorado(tipo);
+        return estacao;
+    }
+};
+
 class InstituicaoObserver: public Observer {
 private:
     std::string nome;
@@ -173,23 +187,9 @@ public:
 };
 
 int main() {
-    EstacaoMonitoramento estacao1;
-    estacao1.setId(1);
-    estacao1.setNomeEstacao("Estacao 1");
-    estacao1.setLocalizacao("Porto Triste - RS");
-    estacao1.setTipoAmbienteMonitorado("Rio");
-
-    EstacaoMonitoramento estacao2;
-    estacao2.setId(2);
-    estacao2.setNomeEstacao("Estacao 2");
-    estacao2.setLocalizacao("São José dos Morros - SP");
-    estacao2.setTipoAmbienteMonitorado("Lago");
-
-    EstacaoMonitoramento estacao3;
-    estacao3.setId(3);
-    estacao3.setNomeEstacao("Estacao 3");
-    estacao3.setLocalizacao("Pelotinhas - RS");
-    estacao3.setTipoAmbienteMonitorado("Rio");
+    auto estacao1 = EstacaoMonitoramentoFactory::criarEstacao(1, "Estacao 1", "Porto Triste - RS", "Rio");
+    auto estacao2 = EstacaoMonitoramentoFactory::criarEstacao(2, "Estacao 2", "São José dos Morros - SP", "Lago");
+    auto estacao3 = EstacaoMonitoramentoFactory::criarEstacao(3, "Estacao 3", "Pelotinhas - RS", "Rio");
 
     InstituicaoObserver unifesp;
     unifesp.setNome("UNIFESP");
@@ -199,19 +199,19 @@ int main() {
 
     AlertaObserver alerta;
 
-    estacao1.addObserver(&unifesp);
-    estacao1.addObserver(&pucrs);
-    estacao1.addObserver(&alerta);
+    estacao1->addObserver(&unifesp);
+    estacao1->addObserver(&pucrs);
+    estacao1->addObserver(&alerta);
 
-    estacao2.addObserver(&unifesp);
-    estacao2.addObserver(&alerta);
+    estacao2->addObserver(&unifesp);
+    estacao2->addObserver(&alerta);
 
-    estacao3.addObserver(&pucrs);
-    estacao3.addObserver(&alerta);
+    estacao3->addObserver(&pucrs);
+    estacao3->addObserver(&alerta);
 
-    estacao1.atualizarLeituras(25.0, 68.0, 1013.0, 7.1);
-    estacao2.atualizarLeituras(36.5, 92.0, 1008.0, 5.8);
-    estacao3.atualizarLeituras(22.0, 81.0, 1011.0, 7.4);
+    estacao1->atualizarLeituras(25.0, 68.0, 1013.0, 7.1);
+    estacao2->atualizarLeituras(36.5, 92.0, 1008.0, 5.8);
+    estacao3->atualizarLeituras(22.0, 81.0, 1011.0, 7.4);
 
     return 0;
 }
