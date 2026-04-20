@@ -216,6 +216,69 @@ public:
     }
 };
 
+class InterfaceSensorAmbiental {
+public:
+    virtual ~InterfaceSensorAmbiental() = default;
+    virtual double lerTemperatura() const = 0;
+    virtual double lerUmidade() const = 0;
+    virtual double lerPressao() const = 0;
+    virtual double lerPh() const = 0;
+};
+
+class SensorExternoLegado {
+private:
+    double temperaturaLegado;
+    double humidadeLegado;
+    double pressaoLegado;
+    double phLegado;
+
+public:
+    SensorExternoLegado(double temperatura, double umidade, double pressao, double ph): temperaturaLegado(temperatura), humidadeLegado(umidade),
+          pressaoLegado(pressao),
+          phLegado(ph) {}
+
+    double getTemperaturaLegado() const {
+        return temperaturaLegado;
+    }
+
+    double getHumidadeLegado() const {
+        return humidadeLegado;
+    }
+
+    double getPressaoLegado() const {
+        return pressaoLegado;
+    }
+
+    double getPhLegado() const {
+        return phLegado;
+    }
+};
+
+class SensorExternoAdapter: public InterfaceSensorAmbiental { // adapter
+private:
+    SensorExternoLegado* sensorLegado;
+
+public:
+    explicit SensorExternoAdapter(SensorExternoLegado* sensorLegado): sensorLegado(sensorLegado) {}
+
+    double lerTemperatura() const override {
+        return sensorLegado->getTemperaturaLegado();
+    }
+
+    double lerUmidade() const override {
+        return sensorLegado->getHumidadeLegado();
+    }
+
+    double lerPressao() const override {
+        return sensorLegado->getPressaoLegado();
+    }
+
+    double lerPh() const override {
+        return sensorLegado->getPhLegado();
+    }
+};
+
+
 class SistemaMonitoramentoFacade { // fachada
 public:
     void cadastrarEstacao(int id, const std::string& nome, const std::string& localizacao, const std::string& tipo) {
@@ -267,6 +330,13 @@ int main() {
     sistema.atualizarLeiturasEstacao(1, 25.0, 68.0, 1013.0, 7.1);
     sistema.atualizarLeiturasEstacao(2, 36.5, 92.0, 1008.0, 5.8);
     sistema.atualizarLeiturasEstacao(3, 22.0, 81.0, 1011.0, 7.4);
+
+    SensorExternoLegado sensorRioLegado(27.8, 74.0, 1012.5, 6.9);
+    SensorExternoAdapter sensorAdaptado(&sensorRioLegado);
+
+    std::cout << "Atualização via Adapter\n";
+    sistema.atualizarLeiturasEstacao(1, sensorAdaptado.lerTemperatura(), sensorAdaptado.lerUmidade(), sensorAdaptado.lerPressao(), 
+        sensorAdaptado.lerPh());
 
     return 0;
 }
