@@ -367,6 +367,59 @@ public:
     }
 };
 
+class SensorDecorator: public InterfaceSensorAmbiental { //decorator
+protected:
+    InterfaceSensorAmbiental* sensor;
+
+public:
+    explicit SensorDecorator(InterfaceSensorAmbiental* sensor): sensor(sensor) {}
+
+    double lerTemperatura() const override {
+        return sensor->lerTemperatura();
+    }
+
+    double lerUmidade() const override {
+        return sensor->lerUmidade();
+    }
+
+    double lerPressao() const override {
+        return sensor->lerPressao();
+    }
+
+    double lerPh() const override {
+        return sensor->lerPh();
+    }
+};
+
+class LogSensorDecorator: public SensorDecorator {
+public:
+    explicit LogSensorDecorator(InterfaceSensorAmbiental* sensor): SensorDecorator(sensor) {}
+
+    double lerTemperatura() const override {
+        double valor = sensor->lerTemperatura();
+        std::cout << "[Decorator Log] Temperatura lida: " << valor << "\n";
+        return valor;
+    }
+
+    double lerUmidade() const override {
+        double valor = sensor->lerUmidade();
+        std::cout << "[Decorator Log] Umidade lida: " << valor << "\n";
+        return valor;
+    }
+
+    double lerPressao() const override {
+        double valor = sensor->lerPressao();
+        std::cout << "[Decorator Log] Pressao lida: " << valor << "\n";
+        return valor;
+    }
+
+    double lerPh() const override {
+        double valor = sensor->lerPh();
+        std::cout << "[Decorator Log] pH lido: " << valor << "\n";
+        return valor;
+    }
+};
+
 int main() {
     SistemaMonitoramentoFacade sistema;
 
@@ -400,13 +453,14 @@ int main() {
     SensorExternoAdapter sensorAdaptado(&sensorRioLegado);
 
     SensorRemotoProxy sensorProxy(&sensorAdaptado, "Sensor Remoto do Rio 1", true, true);
+    LogSensorDecorator sensorComLog(&sensorProxy);
 
-    std::cout << "Atualizacao via Adapter + Proxy\n";
+    std::cout << "Atualizacao via Adapter, Proxy e Decorator\n";
 
-    double temperatura = sensorProxy.lerTemperatura();
-    double umidade = sensorProxy.lerUmidade();
-    double pressao = sensorProxy.lerPressao();
-    double ph = sensorProxy.lerPh();
+    double temperatura = sensorComLog.lerTemperatura();
+    double umidade = sensorComLog.lerUmidade();
+    double pressao = sensorComLog.lerPressao();
+    double ph = sensorComLog.lerPh();
 
     if (temperatura >= 0.0 && umidade >= 0.0 && pressao >= 0.0 && ph >= 0.0) {
         sistema.atualizarLeiturasEstacao(1, temperatura, umidade, pressao, ph);
