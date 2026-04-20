@@ -302,6 +302,71 @@ public:
     }
 };
 
+class SensorRemotoProxy: public InterfaceSensorAmbiental { // proxy
+private:
+    InterfaceSensorAmbiental* sensorReal;
+    bool acessoPermitido;
+    bool sensorOnline;
+    std::string nomeSensorRemoto;
+
+public:
+    SensorRemotoProxy(InterfaceSensorAmbiental* sensorReal, const std::string& nomeSensorRemoto, bool acessoPermitido = true, 
+        bool sensorOnline = true): sensorReal(sensorReal), acessoPermitido(acessoPermitido), sensorOnline(sensorOnline), 
+        nomeSensorRemoto(nomeSensorRemoto) {}
+
+    void setAcessoPermitido(bool acesso) {
+        acessoPermitido = acesso;
+    }
+
+    void setSensorOnline(bool online) {
+        sensorOnline = online;
+    }
+
+    bool podeAcessar() const {
+        return acessoPermitido && sensorOnline;
+    }
+
+    double lerTemperatura() const override {
+        if (!podeAcessar()) {
+            std::cout << "[Proxy] Acesso negado ou sensor offline para leitura de temperatura em " << nomeSensorRemoto << ".\n";
+            return -1.0;
+        }
+
+        std::cout << "[Proxy] Acessando remotamente temperatura de " << nomeSensorRemoto << ".\n";
+        return sensorReal->lerTemperatura();
+    }
+
+    double lerUmidade() const override {
+        if (!podeAcessar()) {
+            std::cout << "[Proxy] Acesso negado ou sensor offline para leitura de umidade em " << nomeSensorRemoto << ".\n";
+            return -1.0;
+        }
+
+        std::cout << "[Proxy] Acessando remotamente umidade de " << nomeSensorRemoto << ".\n";
+        return sensorReal->lerUmidade();
+    }
+
+    double lerPressao() const override {
+        if (!podeAcessar()) {
+            std::cout << "[Proxy] Acesso negado ou sensor offline para leitura de pressão em " << nomeSensorRemoto << ".\n";
+            return -1.0;
+        }
+
+        std::cout << "[Proxy] Acessando remotamente pressão de " << nomeSensorRemoto << ".\n";
+        return sensorReal->lerPressao();
+    }
+
+    double lerPh() const override {
+        if (!podeAcessar()) {
+            std::cout << "[Proxy] Acesso negado ou sensor offline para leitura de pH em " << nomeSensorRemoto << ".\n";
+            return -1.0;
+        }
+
+        std::cout << "[Proxy] Acessando remotamente pH de " << nomeSensorRemoto << ".\n";
+        return sensorReal->lerPh();
+    }
+};
+
 int main() {
     SistemaMonitoramentoFacade sistema;
 
@@ -334,9 +399,18 @@ int main() {
     SensorExternoLegado sensorRioLegado(27.8, 74.0, 1012.5, 6.9);
     SensorExternoAdapter sensorAdaptado(&sensorRioLegado);
 
-    std::cout << "Atualização via Adapter\n";
-    sistema.atualizarLeiturasEstacao(1, sensorAdaptado.lerTemperatura(), sensorAdaptado.lerUmidade(), sensorAdaptado.lerPressao(), 
-        sensorAdaptado.lerPh());
+    SensorRemotoProxy sensorProxy(&sensorAdaptado, "Sensor Remoto do Rio 1", true, true);
+
+    std::cout << "Atualizacao via Adapter + Proxy\n";
+
+    double temperatura = sensorProxy.lerTemperatura();
+    double umidade = sensorProxy.lerUmidade();
+    double pressao = sensorProxy.lerPressao();
+    double ph = sensorProxy.lerPh();
+
+    if (temperatura >= 0.0 && umidade >= 0.0 && pressao >= 0.0 && ph >= 0.0) {
+        sistema.atualizarLeiturasEstacao(1, temperatura, umidade, pressao, ph);
+    }
 
     return 0;
 }
